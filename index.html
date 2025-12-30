@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Tarihin Dönüm Noktaları: Savaşlar</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tarihin Dönüm Noktaları: Savaş Atlası</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { 
+            --war-red: #8b0000; 
+            --steel-gray: #2f4f4f; 
+            --dark-bg: #1a1a1a; 
+            --paper-light: #f4f1ea; 
+            --gold-accent: #d4af37;
+        }
+        
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Georgia', serif; background: var(--paper-light); }
+        #map { flex: 1; height: 100%; }
+        
+        #info-panel { 
+            width: 450px; padding: 0; background: white; display: flex; 
+            flex-direction: column; box-shadow: -5px 0 15px rgba(0,0,0,0.3); z-index: 1000;
+        }
+        
+        .header { background: var(--steel-gray); color: var(--gold-accent); padding: 20px; text-align: center; border-bottom: 3px solid var(--war-red); }
+        .header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; }
+        
+        .search-area { padding: 15px; border-bottom: 1px solid #ddd; background: #eee; }
+        select { 
+            width: 100%; padding: 12px; border-radius: 4px; border: 2px solid var(--steel-gray);
+            font-size: 14px; outline: none; background: white;
+        }
+
+        #wiki-content { padding: 20px; overflow-y: auto; flex: 1; background: #fff; }
+        #wiki-img { width: 100%; border-radius: 4px; display: none; margin-bottom: 15px; border: 2px solid var(--war-red); }
+        #wiki-title { margin-top: 0; color: var(--war-red); font-size: 22px; border-bottom: 2px solid var(--gold-accent); padding-bottom: 10px; }
+        
+        /* Dönüm Noktası Kutusu */
+        .turning-point-box {
+            background: #fffdf2;
+            border-left: 5px solid var(--gold-accent);
+            padding: 12px;
+            margin-bottom: 15px;
+            font-style: italic;
+            font-size: 14px;
+            color: #555;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+        }
+
+        #wiki-text { line-height: 1.7; color: #333; font-size: 15px; text-align: justify; }
+        
+        .source-link { 
+            display: inline-block; margin-top: 15px; padding: 8px 15px; 
+            background: var(--war-red); color: white; text-decoration: none; 
+            border-radius: 4px; font-weight: bold; font-size: 13px;
+        }
+
+        .translation-badge {
+            display: inline-block; background: #ffebee; color: #c62828;
+            padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-bottom: 10px;
+        }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #map { height: 40vh; width: 100%; }
+            #info-panel { width: 100%; height: 60vh; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <div id="info-panel">
+        <div class="header">
+            <h1>TARİHİN DÖNÜM NOKTALARI: SAVAŞLAR</h1>
+        </div>
+        <div class="search-area">
+            <select id="warSelect">
+                <option value="">Bir Dönüm Noktası Seçin</option>
+            </select>
+        </div>
+        <div id="wiki-content">
+            <h2 id="wiki-title">Dünya Tarihi Atlası</h2>
+            <div id="tp-container"></div>
+            <div id="translation-status"></div>
+            <img id="wiki-img" src="" alt="Savaş Görseli">
+            <div id="wiki-text">Haritadan bir işaretçiye tıklayarak o savaşın neden bir "Dönüm Noktası" kabul edildiğini ve detaylarını görebilirsiniz.</div>
+            <a id="wiki-link" href="#" target="_blank" class="source-link" style="display:none;">Detaylı Bilgi (Wikipedia)</a>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const wars = [
+         { 
+                name: "Kadeş Savaşı (M.Ö. 1274)", 
+                lat: 34.55, lng: 36.51, wiki: "Kadeş_Savaşı",
+                turningPoint: "Tarihin bilinen ilk yazılı barış antlaşması imzalandı, diplomasi kavramı doğdu."
+            },
+            { 
+                name: "Maraton Muharebesi (M.Ö. 490)", 
+                lat: 38.11, lng: 23.97, wiki: "Maraton_Muharebesi",
+                turningPoint: "Batı medeniyetinin temellerini atan Yunan şehir devletleri, Pers istilasını durdurarak hayatta kaldı."
+            },
+          { 
+                name: "Salamis Deniz Savaşı (M.Ö. 480)", 
+                lat: 37.95, lng: 23.57, wiki: "Salamis_Deniz_Muharebesi",
+                turningPoint: "Perslerin Avrupa'ya girişi engellendi; Batı medeniyeti ve demokrasi kavramı bu zafer sayesinde korundu."
+            },
+            {
+    name: "Issos Savaşı (M.Ö. 333)",
+    lat: 36.60,
+    lng: 36.20,
+    wiki: "İssos Muharebesi",
+    turningPoint: "Büyük İskender, Pers Kralı Darius III'ü yenerek Asya seferini hızlandırdı ve Pers İmparatorluğu'nun çöküşünü başlattı."
+  },
+          { 
+    name: "Hydaspes Muharebesi (M.Ö. 326)", 
+    lat: 32.82, lng: 73.74, wiki: "Hidaspes Muharebesi",
+    turningPoint: "Büyük İskender'in en zorlu ve son büyük zaferi; antik Yunan kültürü ile Hint kültürü ilk kez bu ölçekte temas etti."
+},
+            { 
+                name: "Gaugamela Savaşı (M.Ö. 331)", 
+                lat: 36.36, lng: 43.25, wiki: "Gaugamela_Savaşı",
+                turningPoint: "Büyük İskender Pers İmparatorluğu'nu yıktı ve Hellenistik kültürün Asya'ya yayılmasını sağladı."
+            },
+    
+            { 
+                name: "Zama Muharebesi (M.Ö. 202)", 
+                lat: 36.12, lng: 9.44, wiki: "Zama_Muharebesi",
+                turningPoint: "Roma, Kartaca'yı yenerek Akdeniz'in tek hâkimi oldu ve bir dünya imparatorluğuna dönüştü."
+            },
+          { 
+                name: "Magnesia Muharebesi (M.Ö. 190)", 
+                lat: 38.51, lng: 27.42, wiki: "Magnesia_Muharebesi",
+                turningPoint: "Roma'nın Anadolu'ya ilk adımıdır; bu zaferle Roma bir İtalyan gücü olmaktan çıkıp bir dünya imparatorluğuna dönüşmüştür."
+            },
+          { 
+    name: "Tevtonburg Ormanı Savaşı (M.S. 9)", 
+    lat: 52.40, lng: 8.12, wiki: "Varus_Savaşı",
+    turningPoint: "Germen kabileleri Roma ordusunu yok etti; Roma İmparatorluğu'nun sınırı Ren Nehri'nde kaldı ve Kuzey Avrupa hiçbir zaman Romalılaşmadı."
+},
+     
+          { 
+    name: "Fei Nehri Muharebesi (383)", 
+    lat: 32.61, lng: 116.92, wiki: "Fei_Nehri_Muharebesi",
+    turningPoint: "Güney Çin hanedanı, kendisinden çok daha büyük olan Kuzey ordusunu yendi; Çin'in tamamen kuzeyli göçebelerin kontrolüne girmesi engellendi ve Çin kültürü korundu."
+},
+            { 
+                name: "Katalon Muharebesi (451)", 
+                lat: 48.95, lng: 4.36, wiki: "Katalon_Muharebesi",
+                turningPoint: "Attila önderliğindeki Hunlar, Roma İmparatorluğu'nun yenilmezlik algısını yıktı ve kavimler göçünü tetikledi."
+            },
+          { 
+    name: "Salsu Muharebesi (612)", 
+    lat: 39.50, lng: 125.50, wiki: "Salsu_Muharebesi",
+    turningPoint: "Kore krallığı Goguryeo, 1 milyonluk Çin (Sui) ordusunu nehir sularıyla yok etti; Sui Hanedanı çöktü ve Doğu Asya'nın güç dengesi değişti."
+},
+            { 
+                name: "Yermük Muharebesi (636)", 
+                lat: 32.81, lng: 35.95, wiki: "Yermük_Muharebesi",
+                turningPoint: "Bizans'ın Orta Doğu hakimiyeti bitti, İslamiyet'in yayılmasının önü açıldı."
+            },
+        { 
+                name: "Gemilerin Yakılması ve Endülüs'ün Fethi (711)", 
+                lat: 36.14, lng: -5.35, wiki: "Tarık_bin_Ziyad",
+                turningPoint: `Tarık bin Ziyad'ın Cebelitarık'ta gemileri yakmasıyla başlayan bu süreç, Avrupa'da 800 yıl sürecek olan yüksek İslam medeniyetinin (Endülüs) temelini atmıştır.`
+            },
+            { 
+                name: "Puvatya Muharebesi (732)", 
+                lat: 46.58, lng: 0.34, wiki: "Puvatya_Muharebesi",
+                turningPoint: "Avrupa'da İslam ilerleyişi durduruldu ve Avrupa'nın kültürel kimliği şekillendi."
+            },
+            { 
+                name: "Talas Muharebesi (751)", 
+                lat: 42.52, lng: 72.23, wiki: "Talas_Muharebesi",
+                turningPoint: "Türklerin İslamiyet'i tanıması ve kağıdın Çin dışına çıkarak dünyaya yayılması sağlandı."
+            },
+          { 
+    name: "An Luşan İsyanı(755-769)", 
+    lat: 34.38, lng: 115.62, wiki: "An Luşan İsyanı",
+    turningPoint: "An Luşan İsyanı, Tang Hanedanı'nı derinden etkileyen büyük bir iç savaştır. Bu isyan, Çin'in Altın Çağı'nın sona ermesine ve nüfus kayıplarına neden olarak bölgesel gücünü zayıflattı."
+},
+          { 
+    name: "Lechfeld Muharebesi (955)", 
+    lat: 48.24, lng: 10.87, wiki: "Lechfeld_Muharebesi",
+    turningPoint: "Macarların Avrupa içlerine yaptığı akınlar durduruldu; Macarlar yerleşik hayata geçip Hristiyanlığı seçerek modern Macaristan'ın temellerini attı."
+},
+            { 
+                name: "Nisâbur Muharebesi (1038)", 
+                lat: 36.21, lng: 58.79, wiki: "Nişabur Muharebesi (1038)",
+                turningPoint: "Selçukluların Horasan'da kazandığı bu zafer, Büyük Selçuklu Devleti'nin fiilen kurulmasını sağladı."
+            },
+            { 
+                name: "Dandanakan Savaşı (1040)", 
+                lat: 37.40, lng: 61.85, wiki: "Dandanakan_Savaşı",
+                turningPoint: "Selçuklular resmen kuruldu, Gazneliler yıkılış sürecine girdi. Türklerin Orta Doğu liderliği başladı."
+            },
+          { 
+    name: "Muye Muharebesi (M.Ö. 1046)", 
+    lat: 35.45, lng: 114.12, wiki: "Muye Muharebesi",
+    turningPoint: "Zhou Hanedanı, Shang Hanedanı'nı devirdi; Çin siyasetinin temeli olan 'Göklerin Vekaleti' (Mandate of Heaven) kavramı bu savaşla doğdu."
+},
+            { 
+                name: "Hastings Muharebesi (1066)", 
+                lat: 50.91, lng: 0.48, wiki: "Hastings_Muharebesi",
+                turningPoint: "Norman fethiyle modern İngiltere'nin temelleri atıldı."
+            },
+            { 
+                name: "Malazgirt Muharebesi (1071)", 
+                lat: 39.14, lng: 42.54, wiki: "Malazgirt_Meydan_Muharebesi",
+                turningPoint: "Anadolu'nun kapıları Türklere açıldı; Bizans'ın savunma hattı çöktü."
+            },
+          { 
+    name: "Katvan Savaşı (1141)", 
+    lat: 39.65, lng: 66.97, wiki: "Katvan_Savaşı",
+    turningPoint: "Karahitaylar, Büyük Selçuklu ordusunu yenilgiye uğrattı; bu yenilgi Selçukluların yıkılış sürecini başlattı ve Orta Asya'da güç dengelerini değiştirdi."
+},
+           
+          { 
+    name: "Miryokefalon Savaşı (1176)", 
+    lat: 38.29, lng: 31.11, wiki: "Miryokefalon_Muharebesi",
+    turningPoint: "Anadolu'nun Türk yurdu olduğu kesinleşti, Bizans taarruz gücünü kaybetti."
+},
+          { 
+    name: "Hattin Muharebesi (1187)", 
+    lat: 32.80, lng: 35.44, wiki: "Hıttin Muharebesi",
+    turningPoint: "Selahaddin Eyyubi Haçlı ordusunu yok ederek Kudüs'ün kapılarını açtı; Orta Doğu'da Avrupalı hakimiyeti yüzyıllarca sekteye uğradı."
+},
+ { 
+  name: "Tarain Muharebeleri (1191-1192)", 
+  lat: 29.80, 
+  lng: 76.33, 
+  wiki: "Birinci Tarain Muharebesi",
+  turningPoint: "Birinci savaşta Rajputlar Gurlu Muhammed'i durdurdu, ancak İkinci savaşta Gurlu Muhammed kesin zafer kazanarak Kuzey Hindistan'da Müslüman hakimiyetinin yolunu açtı."
+},
+
+ { 
+    name: "Las Navas de Tolosa (1212)", 
+    lat: 38.34, lng: -3.54, wiki: "Las Navas de Tolosa Muharebesi",
+    turningPoint: "Hristiyan krallıklar Muvahhidleri yendi; İspanya'daki İslam hakimiyeti zayıfladı ve Reconquista (yeniden fetih) süreci geri dönülemez noktaya geldi."
+},
+          { 
+    name: "Buhara Kuşatması (1220)", 
+    lat: 39.77, lng: 64.41, wiki: "Buhara Kuşatması",
+    turningPoint: "Cengiz Han'ın İslam dünyasına girişi; Harezmşahlar yıkıldı, Orta Asya'nın demografik ve kültürel yapısı kalıcı olarak Moğol-Türk etkisine girdi."
+},
+          { 
+    name: "Mohi Muharebesi (1241)", 
+    lat: 47.98, lng: 20.92, wiki: "Mohi_Muharebesi",
+    turningPoint: "Moğollar, Macar ordusunu yok ederek Orta Avrupa'yı istila etti; Avrupa, Moğol askeri gücüyle ilk kez bu kadar acı bir şekilde yüzleşti."
+},
+         
+            { 
+                name: "Ayn Calut Muharebesi (1260)", 
+                lat: 32.53, lng: 35.36, wiki: "Ayn_Calut_Muharebesi",
+                turningPoint: "Moğol İmparatorluğu'nun batıya ilerleyişi tarihte ilk kez kesin olarak durduruldu."
+            },
+          { 
+    name: "Bach Dang Nehri Savaşı (1288)", 
+    lat: 20.89, lng: 106.65, wiki: "Moğolların Vietnam seferleri",
+    turningPoint: "Vietnam ordusu, Kubilay Han'ın devasa Moğol donanmasını nehre diktiği kazıklar ve sular çekilince başlattığı saldırıyla yok etti; Moğolların Güneydoğu Asya hayali bitti."
+},
+          { 
+    name: "Morgarten Muharebesi (1315)", 
+    lat: 47.11, lng: 8.64, wiki: "Morgarten_Muharebesi",
+    turningPoint: "İsviçreli köylüler Habsburg şövalyelerini pusuya düşürerek yok etti; modern İsviçre Konfederasyonu'nun temeli atıldı ve piyade düzeni şövalyelere üstünlük kurmaya başladı."
+},
+          { 
+    name: "Niğbolu Muharebesi (1396)", 
+    lat: 43.66, lng: 24.89, wiki: "Niğbolu Muharebesi (1396)",
+    turningPoint: "Orta Çağ'ın son büyük Haçlı seferi başarısız oldu; Osmanlı'nın Balkan hakimiyeti tescillendi."
+},
+            { 
+                name: "Ankara Savaşı (1402)", 
+                lat: 40.02, lng: 32.85, wiki: "Ankara_Savaşı",
+                turningPoint: "Osmanlı Devleti'nde Fetret Devri başladı; İstanbul'un fethi yarım asır gecikti."
+            },
+          { 
+    name: "Agincourt Muharebesi (1415)", 
+    lat: 50.46, lng: 2.14, wiki: "Agincourt_Muharebesi",
+    turningPoint: "İngiliz okçuları Fransız şövalye sınıfını yok etti; ağır zırhlı süvari dönemi kapandı ve modern piyade savaşlarının önemi anlaşıldı."
+},
+          { 
+    name: "Varna Muharebesi (1444)", 
+    lat: 43.21, lng: 27.91, wiki: "Varna_Muharebesi",
+    turningPoint: "Haçlı ordusu bozguna uğratıldı, Osmanlı'nın Balkanlar'daki varlığı kesinleşti ve İstanbul'un fethi için stratejik engel kalmadı."
+},
+       
+            { 
+                name: "İstanbul'un Fethi (1453)", 
+                lat: 41.01, lng: 28.97, wiki: "İstanbul'un_Fethi",
+                turningPoint: "Orta Çağ kapandı, feodalite zayıfladı ve Rönesans'ı tetikleyen göçler başladı."
+            },
+          { 
+    name: "Otlukbeli Muharebesi (1473)", 
+    lat: 40.03, lng: 39.91, wiki: "Otlukbeli_Muharebesi",
+    turningPoint: "Ateşli silahların (top ve tüfek) geleneksel süvari gücüne üstünlüğü kanıtlandı; Doğu Anadolu'daki rakip güçler etkisiz hale getirildi."
+},
+          { 
+    name: "Çaldıran Muharebesi (1514)", 
+    lat: 39.15, lng: 44.40, wiki: "Çaldıran_Muharebesi",
+    turningPoint: "Doğu Anadolu'nun güvenliği sağlandı ve imparatorluğun rotası Doğu'ya çevrildi."
+},
+            { 
+                name: "Ridaniye Savaşı (1517)", 
+                lat: 30.05, lng: 31.23, wiki: "Ridaniye_Muharebesi",
+                turningPoint: "Memlükler yıkıldı, Hilafet Osmanlı'ya geçti ve İslam dünyasında birlik sağlandı."
+            },
+          { 
+                name: "Tenochtitlan'ın Düşüşü (1521)", 
+                lat: 19.43, lng: -99.13, wiki: "Tenoçtitlan Kuşatması",
+                turningPoint: "Aztek İmparatorluğu yıkıldı; Amerika kıtasının tamamen Avrupa (İspanyol) kontrolüne girmesinin yolu açıldı."
+            },
+            { 
+                name: "Mohaç Meydan Muharebesi (1526)", 
+                lat: 45.99, lng: 18.68, wiki: "Mohaç_Meydan_Muharebesi",
+                turningPoint: "Orta Avrupa'da Macar gücü çöktü ve Osmanlı-Habsburg rekabeti başladı."
+            },
+            { 
+                name: "Preveze Deniz Zaferi (1538)", 
+                lat: 38.95, lng: 20.75, wiki: "Preveze_Deniz_Muharebesi",
+                turningPoint: "Akdeniz'deki Türk hakimiyeti zirveye ulaştı; Akdeniz bir Türk gölü haline geldi."
+            },
+            { 
+                name: "Lepanto (İnebahtı) Deniz Savaşı (1571)", 
+                lat: 38.33, lng: 21.35, wiki: "İnebahtı_Deniz_Muharebesi",
+                turningPoint: "Osmanlı'nın denizlerdeki yenilmezlik efsanesi sona erdi."
+            },
+        { 
+                name: "Manila Muharebesi (1571)", 
+                lat: 14.59, lng: 120.98, wiki: "İspanyol_Doğu_Hint_Adaları",
+                turningPoint: "İspanyolların yerel krallıkları yenerek Filipinler'i ele geçirdiği savaştır. Bu zaferle 'Manila Galyonları' rotası açılmış, dünya tarihinde ilk kez Amerika, Asya ve Avrupa arasında kesintisiz bir küresel ticaret ağı kurulmuştur."
+            },
+            { 
+                name: "İspanyol Armada'nın Yenilgisi (1588)", 
+                lat: 50.20, lng: -4.20, wiki: "İspanyol_Armadası",
+                turningPoint: "İngiltere'nin küresel deniz imparatorluğu olma yolu açıldı."
+            },
+          { 
+    name: "İmjin Savaşı - Hansan Adası (1592)", 
+    lat: 34.75, lng: 128.50, wiki: "Hansan_Adası_Muharebesi",
+    turningPoint: "Amiral Yi Sun-sin 'Kaplumbağa Gemiler' ile Japon donanmasını yok etti; Japonya'nın anakarayı (Çin ve Kore) istila planı 300 yıl ertelendi."
+},
+          {
+  name: "Avustralya'nın Keşfi ve Sömürgeleştirilmesi (1606 sonrası)",
+  lat: -12.46,
+  lng: 130.84,
+  wiki: "Avustralya'nın Avrupalılarca keşfi",
+  turningPoint: "1606 yılında Avrupalı kaşiflerin Avustralya kıtasını keşfetmesiyle başlayan süreç, yerli halklarla Avrupalılar arasında uzun süren çatışmaların ve direnişin temelini oluşturdu."
+},
+          { 
+                name: "Otuz Yıl Savaşları - Breitenfeld (1631)", 
+                lat: 51.41, lng: 12.33, wiki: "Breitenfeld_Muharebesi_(1631)",
+                turningPoint: "Modern askeri taktiklerin (hareketli topçu birliği) doğuşu ve Avrupa'da mezhep dengelerinin değişimi."
+            },
+          { 
+    name: "Lützen Muharebesi (1632)", 
+    lat: 51.25, lng: 12.13, wiki: "Lützen Muharebesi (1632)",
+    turningPoint: "Otuz Yıl Savaşları'nın zirvesidir; İsveç Kralı Gustavus Adolphus modern askeri disiplini dünyaya tanıttı ve Avrupa'daki Katolik-Protestan dengesini kalıcı hale getirdi."
+},
+           {
+    name: "Westfalia Barışı (1648)",
+    lat: 51.96,
+    lng: 7.63,
+    wiki: "Vestfalya Antlaşması",
+    turningPoint: "Otuz Yıl Savaşları'nı sona erdiren barış; modern devletler sistemi ve egemenlik kavramının doğuşu."
+  },
+            { 
+                name: "Viyana Kuşatması (1683)", 
+                lat: 48.20, lng: 16.37, wiki: "II._Viyana_Kuşatması",
+                turningPoint: "Osmanlı'nın Avrupa'daki ilerleyişi durdu ve büyük geri çekilme süreci başladı."
+            },
+          { 
+    name: "İspanya Veraset Savaşı (1701–1714)", 
+    lat: 48.64, lng: 10.61, wiki: "İspanya Veraset Savaşı",
+    turningPoint: "İspanya Veraset Savaşı, Avrupa'da güç dengelerini değiştiren önemli bir çatışmadır. Savaş sonunda Fransa'nın yayılmacı planları engellenmiş, İngiltere'nin askeri prestiji artmıştır."
+},
+          { 
+    name: "Poltava Muharebesi (1709)", 
+    lat: 49.60, lng: 34.55, wiki: "Poltava_Muharebesi",
+    turningPoint: "Rus Çarı I. Petro, İsveç İmparatorluğu'nu yendi; İsveç büyük güç olma özelliğini kaybetti ve Rusya bir 'Dünya Gücü' olarak tarih sahnesine çıktı."
+},
+          { 
+    name: "Kulloden Muharebesi (1746)", 
+    lat: 57.47, lng: -4.09, wiki: "Culloden_Muharebesi",
+    turningPoint: "İskoç klan sisteminin sonu; Britanya Adası'nda merkezi İngiliz otoritesi kesinleşti ve Büyük Britanya küresel bir imparatorluk olmaya odaklandı."
+},
+          { 
+                name: "Plassey Muharebesi (1757)", 
+                lat: 23.80, lng: 88.25, wiki: "Plassey Muharebesi",
+                turningPoint: "İngiliz Doğu Hindistan Şirketi Hindistan'da hakimiyet kurdu; İngiltere'nin küresel süper güç olma süreci başladı."
+            },
+          { 
+    name: "Sava Nehri (Panipat) Savaşı (1761)", 
+    lat: 29.39, lng: 76.96, wiki: "Üçüncü_Panipat_Muharebesi",
+    turningPoint: "Afgan lider Ahmed Şah Durrani, Maratha İmparatorluğu'nu durdurdu; Hindistan'da merkezi bir güç kalmaması, İngilizlerin Hindistan'ı kolayca sömürgeleştirmesine yol açtı."
+},
+          { 
+    name: "Çeşme Deniz Muharebesi (1770)", 
+    lat: 38.32, lng: 26.30, wiki: "Çeşme_Deniz_Muharebesi",
+    turningPoint: "Osmanlı donanmasının imhasıyla sonuçlandı; denizlerdeki gerileme ve Rus tehdidi zirveye ulaştı."
+},
+            { 
+                name: "Yorktown Kuşatması (1781)", 
+                lat: 37.23, lng: -76.50, wiki: "Yorktown_Kuşatması",
+                turningPoint: "ABD bağımsızlığını kazandı; modern demokrasinin ilk büyük kalesi kuruldu."
+            },
+          { 
+    name: "Karanşebeş Muharebesi (1788)", 
+    lat: 45.42, lng: 22.22, wiki: "Şebeş Muharebesi",
+    turningPoint: "Avusturya ordusunun kendi kendine ateş açarak dağıldığı, Osmanlı'nın tek kurşun atmadan kazandığı absürt bir dönüm noktasıdır."
+},
+     
+          { 
+                name: "Akka Kuşatması (1799)", 
+                lat: 32.93, lng: 35.07, wiki: "Akka_Kuşatması_(1799)",
+                turningPoint: "Cezzar Ahmed Paşa komutasındaki Osmanlı ordusu, Napolyon'un yenilmezlik efsanesini bitirdi ve Fransa'nın Doğu İmparatorluğu hayallerini suya düşürdü. Napolyon \"Kader beni bir ihtiyarın elinde oyuncak etti\" şeklindeki sözü söylemiştir."
+            },
+           {
+    name: "Austerlitz Muharebesi (1805)",
+    lat: 49.14,
+    lng: 16.94,
+    wiki: "Austerlitz_Muharebesi",
+    turningPoint: "Napolyon'un en büyük zaferi; Avrupa'da Fransa'nın hegemonyasını pekiştirdi."
+  },
+          { 
+                name: "Trafalgar Deniz Savaşı (1805)", 
+                lat: 36.18, lng: -6.03, wiki: "Trafalgar Muharebesi",
+                turningPoint: `Amiral Nelson'ın "İngiltere herkesin görevini yapmasını bekler" emriyle başlayan ve Britanya'nın 100 yıllık deniz hakimiyetini kuran zaferdir.`
+            },
+          { 
+    name: "Borodino Muharebesi (1812)", 
+    lat: 55.51, lng: 35.82, wiki: "Borodino_Muharebesi",
+    turningPoint: "Napolyon'un Rusya seferindeki en kanlı çarpışma; Napolyon Moskova'ya girse de ordusu eridi ve bu durum imparatorluğunun çöküşünü hazırladı."
+},
+            { 
+                name: "Leipzig Muharebesi (1813)", 
+                lat: 51.34, lng: 12.37, wiki: "Leipzig_Muharebesi",
+                turningPoint: "Napolyon'un gücü kırıldı; Avrupa haritası yeniden şekillendi."
+            },
+            { 
+                name: "Waterloo Muharebesi (1815)", 
+                lat: 50.68, lng: 4.41, wiki: "Waterloo_Muharebesi",
+                turningPoint: "Napolyon dönemi tamamen kapandı."
+            },
+          { 
+    name: "Navarin Deniz Muharebesi (1827)", 
+    lat: 36.92, lng: 21.69, wiki: "Navarin_Deniz_Muharebesi",
+    turningPoint: "Müttefik devletlerin Osmanlı donanmasını yakmasıyla Yunanistan bağımsızlığına kavuştu ve imparatorluğun savunma gücü çöktü."
+},
+          { 
+                name: "Amerikan İç Savaşı - Gettysburg (1863)", 
+                lat: 39.81, lng: -77.23, wiki: "Gettysburg_Muharebesi",
+                turningPoint: "Modern dünyanın süper gücü olacak ABD'nin parçalanmaktan kurtulduğu ve köleliğin kalktığı kırılma noktasıdır."
+            },
+          { 
+    name: "Hakodate Savaşı (1869)", 
+    lat: 41.79, lng: 140.75, wiki: "Hakodate Deniz Muharebesi",
+    turningPoint: "Boshin Savaşı'nın sonudur; Samuray devri kapandı ve Japonya hızla batılılaşarak modern bir askeri sanayi devine dönüştü."
+},
+            { 
+                name: "Sedan Muharebesi (1870)", 
+                lat: 49.70, lng: 4.94, wiki: "Sedan_Muharebesi",
+                turningPoint: "Alman birliği kuruldu; bu durum I. Dünya Savaşı'nın en büyük nedenlerinden biri oldu."
+            },
+          { 
+    name: "93 Harbi (1877-1878)", 
+    lat: 43.41, lng: 24.61, wiki: "93_Harbi",
+    turningPoint: "Balkanlar ve Kafkasya'da büyük toprak kayıpları yaşandı; Berlin Antlaşması ile imparatorluğun sonu yaklaşmaya başladı."
+},
+          { 
+                name: "Tsushima Deniz Muharebesi (1905)", 
+                lat: 34.25, lng: 129.41, wiki: "Tsushima_Deniz_Muharebesi",
+                turningPoint: "Modern tarihte ilk kez bir Asya gücü (Japonya), bir Avrupa gücünü (Rusya) yenerek emperyalist dengeleri sarstı."
+            },
+   { 
+    name: "Balkan Savaşları (1912-1913)", 
+    lat: 42.06, lng: 19.50, wiki: "Balkan_Savaşları",
+    turningPoint: "Karadağ'ın saldırısıyla başlayan savaş, Lüleburgaz gibi büyük bozgunlarla devam etti. Osmanlı'nın 500 yıllık Rumeli hakimiyeti sona erdi."
+},
+          {
+  name: "Birinci Dünya Savaşı Başlangıcı (Saraybosna, 1914)",
+  lat: 43.85,
+  lng: 18.42,
+  wiki: "Birinci Dünya Savaşı",
+  turningPoint: "Avusturya-Macaristan Arşidükü Franz Ferdinand'ın suikastiyle başlayan kriz; Birinci Dünya Savaşı'nın fitilini ateşledi."
+},
+            { 
+                name: "Çanakkale Savaşları (1915)", 
+                lat: 40.14, lng: 26.39, wiki: "Çanakkale_Savaşı",
+                turningPoint: "I. Dünya Savaşı uzadı, Rusya'da çarlık yıkıldı ve Türk ruhu yeniden uyandı."
+            },
+            { 
+                name: "Kut'ül Amâre Kuşatması (1916)", 
+                lat: 32.50, lng: 45.82, wiki: "Kût'ül-Amâre Kuşatması",
+                turningPoint: "İngiliz ordusuna karşı tarihin en büyük kuşatma ve esir alma zaferlerinden biri kazanıldı."
+            },
+          { 
+    name: "Jutland Deniz Muharebesi (1916)", 
+    lat: 56.80, lng: 6.00, wiki: "Jutland_Muharebesi",
+    turningPoint: "Tarihin en büyük zırhlı donanma savaşı; Alman donanması İngiliz ablukasını kıramadı, bu da Almanya'nın I. Dünya Savaşı'ndaki ekonomik çöküşünü hızlandırdı."
+},
+            { 
+                name: "Somme Muharebesi (1916)", 
+                lat: 50.01, lng: 2.68, wiki: "Somme_Muharebesi",
+                turningPoint: "Tarihte ilk kez tank kullanıldı; modern teknolojik savaşın başlangıcı oldu."
+            },
+            {
+    name: "Verdun Muharebesi (1916)",
+    lat: 49.22,
+    lng: 5.39,
+    wiki: "Verdun_Savaşı",
+    turningPoint: "I. Dünya Savaşı'nın en uzun ve kanlı muharebelerinden biri; savaşın yıpratma savaşına dönüşmesini hızlandırdı."
+  },
+          { 
+                name: "Ekim Devrimi (1917)", 
+                lat: 59.93, lng: 30.31, wiki: "Ekim_Devrimi",
+                turningPoint: "Çarlık Rusyası yıkıldı; 20. yüzyıla damga vuracak olan Soğuk Savaş'ın ve Komünizm-Kapitalizm rekabetinin temeli atıldı."
+            },
+            { 
+                name: "Sakarya Meydan Muharebesi (1921)", 
+                lat: 39.73, lng: 32.48, wiki: "Sakarya_Meydan_Muharebesi",
+                turningPoint: "238 yıllık geri çekilme durdu; Milli Mücadele'nin savunmadan taarruza geçtiği andır."
+            },
+            { 
+                name: "Büyük Taarruz (1922)", 
+                lat: 38.85, lng: 29.98, wiki: "Başkomutanlık_Meydan_Muharebesi",
+                turningPoint: "Anadolu'nun işgali sona erdi; bağımsız Türkiye Cumhuriyeti'nin yolu açıldı."
+            },
+          { 
+    name: "Khalkhin Gol Muharebesi (1939)", 
+    lat: 47.72, lng: 118.60, wiki: "Halhin_Gol_Muharebesi",
+    turningPoint: "Sovyet-Japon sınır çatışması; Japonya ağır yenilgi sonrası rotasını Sibirya'dan Pasifik'e çevirdi. Bu, ABD ile savaşa (Pearl Harbor) giden süreci başlattı."
+},
+      {
+  name: "İkinci Dünya Savaşı Başlangıcı (Westerplatte, 1939)",
+  lat: 54.40,
+  lng: 18.68,
+  wiki: "İkinci Dünya Savaşı",
+  turningPoint: "Nazi Almanyası'nın Polonya'ya saldırısı; İkinci Dünya Savaşı'nın ilk çatışması ve başlangıcı."
+},
+            { 
+                name: "Stalingrad Muharebesi (1942)", 
+                lat: 48.70, lng: 44.51, wiki: "Stalingrad_Muharebesi",
+                turningPoint: "Nazi Almanyası'nın çöküşü başladı; II. Dünya Savaşı'nın kaderi değişti."
+            },
+            { 
+                name: "Midway Deniz Muharebesi (1942)", 
+                lat: 28.21, lng: -177.37, wiki: "Midway_Muharebesi",
+                turningPoint: "Pasifik'te Japon üstünlüğü sona erdi."
+            },
+          { 
+                name: "Normandiya Çıkarması (1944)", 
+                lat: 49.34, lng: -0.85, wiki: "Normandiya_Çıkarması",
+                turningPoint: "Nazi Almanyası'na karşı ikinci cephe açıldı ve Avrupa'nın kurtuluş operasyonu başladı."
+            },
+            { 
+                name: "Hiroşima Atom Bombası (1945)", 
+                lat: 34.38, lng: 132.45, wiki: "Hiroşima_ve_Nagasaki'ye_atom_bombası_saldırısı",
+                turningPoint: "Nükleer çağ başladı; savaş ve diplomasi tamamen değişti."
+            },
+           {
+    name: "1948 Arap-İsrail Savaşı",
+    lat: 31.77,
+    lng: 35.21,
+    wiki: "1948_Arap-İsrail_Savaşı",
+    turningPoint: "İsrail Devleti'nin kurulması ve Orta Doğu'daki uzun süreli çatışmaların başlangıcı."
+  },
+        { 
+                name: "Dien Bien Phu Muharebesi (1954)", 
+                lat: 21.38, lng: 103.01, wiki: "Dien_Bien_Phu_Muharebesi",
+                turningPoint: "Fransız sömürgeciliği Güneydoğu Asya'da sona erdi; tüm dünyadaki dekolonizasyon (sömürgeden kurtulma) hareketlerine ilham verdi."
+            },
+            {
+    name: "Vietnam Savaşı - Tet Taarruzu (1968)",
+    lat: 16.05,
+    lng: 108.25,
+    wiki: "Tet_Taarruzu",
+    turningPoint: "Vietnam Savaşı'nın dönüm noktası; ABD kamuoyunun savaşa karşı tutumunu değiştirdi."
+  },
+          { 
+                name: "Yom Kippur Savaşı (1973)", 
+                lat: 29.98, lng: 32.55, wiki: "Yom_Kippur_Savaşı",
+                turningPoint: "Orta Doğu siyaseti ve küresel petrol ekonomisi kökten değişti; Camp David barış sürecine giden yolu açtı."
+            },
+          {
+  name: "Falkland Savaşı (1982)",
+  lat: -51.70,
+  lng: -59.90,
+  wiki: "Falkland_Savaşı",
+  turningPoint: "Birleşik Krallık ile Arjantin arasında, Güney Atlantik'teki Falkland Adaları üzerindeki egemenlik mücadelesi; bölgesel güç dengelerini derinden etkileyerek Soğuk Savaş sonrası dönemde bölgesel çatışmaların ne kadar kritik olduğunu gözler önüne serdi."
+},
+        {
+  name: "Körfez Savaşı (1991)",
+  lat: 29.37,
+  lng: 47.97,
+  wiki: "Körfez_Savaşı",
+  turningPoint: "Soğuk Savaş sonrası ilk büyük uluslararası askeri müdahale; Orta Doğu dengelerini değiştirdi."
+},
+        ];
+
+        const map = L.map('map').setView([25, 10], 3);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+
+        const select = document.getElementById('warSelect');
+        const wikiTitle = document.getElementById('wiki-title');
+        const wikiText = document.getElementById('wiki-text');
+        const wikiImg = document.getElementById('wiki-img');
+        const wikiLink = document.getElementById('wiki-link');
+        const tpContainer = document.getElementById('tp-container');
+        const transStatus = document.getElementById('translation-status');
+        const markerList = [];
+
+        const ironIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
+            iconSize: [25, 41], iconAnchor: [12, 41]
+        });
+
+        const activeIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            iconSize: [25, 41], iconAnchor: [12, 41]
+        });
+
+        async function fetchWikiData(pageTitle, tpText) {
+            wikiText.innerHTML = "Stratejik analiz yükleniyor...";
+            wikiImg.style.display = "none";
+            wikiLink.style.display = "none";
+            transStatus.innerHTML = "";
+            tpContainer.innerHTML = `<div class="turning-point-box"><strong>Dönüm Noktası:</strong> ${tpText}</div>`;
+            
+            try {
+                let response = await fetch(`https://tr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`);
+                let data = await response.json();
+
+                if (data.status === 404) throw new Error();
+
+                wikiTitle.innerText = data.title;
+                wikiText.innerText = data.extract;
+                if (data.thumbnail) { wikiImg.src = data.thumbnail.source; wikiImg.style.display = "block"; }
+                wikiLink.href = data.content_urls.desktop.page;
+                wikiLink.style.display = "inline-block";
+            } catch (e) {
+                wikiText.innerText = "Detaylı bilgi için lütfen Wikipedia bağlantısını kullanın.";
+                wikiLink.href = `https://tr.wikipedia.org/wiki/${pageTitle}`;
+                wikiLink.style.display = "inline-block";
+            }
+        }
+
+        wars.forEach((w, i) => {
+            const marker = L.marker([w.lat, w.lng], { icon: ironIcon }).addTo(map);
+            marker.bindTooltip(`<div style="font-family: Georgia; color: #8b0000; font-weight: bold; padding: 3px;">${w.name}</div>`, {
+                direction: 'top',
+                offset: L.point(0, -20)
+            });
+            marker.on('click', () => updateWarView(w, i));
+            markerList.push(marker);
+
+            const opt = document.createElement('option');
+            opt.value = i; opt.textContent = w.name;
+            select.appendChild(opt);
+        });
+
+        function updateWarView(w, index) {
+            markerList.forEach(m => m.setIcon(ironIcon));
+            markerList[index].setIcon(activeIcon);
+            select.value = index;
+            map.flyTo([w.lat, w.lng], 7);
+            fetchWikiData(w.wiki, w.turningPoint);
+        }
+
+        select.addEventListener('change', (e) => {
+            if(e.target.value !== "") updateWarView(wars[e.target.value], e.target.value);
+        });
+    </script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
