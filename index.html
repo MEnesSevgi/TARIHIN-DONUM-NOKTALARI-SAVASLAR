@@ -1,15 +1,4 @@
 <!DOCTYPE html>
-<html lang="en">
-
-  <head>
-    <meta charset="UTF-8">
-    <title>Tarihin Dönüm Noktaları: Savaşlar</title>
-    
-
-  </head>
-    
-  <body>
-  <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8" />
@@ -20,7 +9,6 @@
         :root { 
             --war-red: #8b0000; 
             --steel-gray: #2f4f4f; 
-            --dark-bg: #1a1a1a; 
             --paper-light: #f4f1ea; 
             --gold-accent: #d4af37;
         }
@@ -33,47 +21,66 @@
             flex-direction: column; box-shadow: -5px 0 15px rgba(0,0,0,0.3); z-index: 1000;
         }
         
-        .header { background: var(--steel-gray); color: var(--gold-accent); padding: 20px; text-align: center; border-bottom: 3px solid var(--war-red); }
-        .header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; }
+        .header { 
+            background: var(--steel-gray); 
+            color: var(--gold-accent); 
+            padding: 15px 20px; 
+            border-bottom: 3px solid var(--war-red);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header h1 { margin: 0; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; flex: 1; }
         
-        .search-area { padding: 15px; border-bottom: 1px solid #ddd; background: #eee; }
-        select { 
-            width: 100%; padding: 12px; border-radius: 4px; border: 2px solid var(--steel-gray);
-            font-size: 14px; outline: none; background: white;
+        /* Ses Kontrol Grubu */
+        .voice-controls { display: flex; align-items: center; gap: 8px; }
+        
+        #voiceSelect {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid var(--gold-accent);
+            font-size: 10px;
+            padding: 2px;
+            max-width: 100px;
+            border-radius: 4px;
         }
 
-        #wiki-content { padding: 20px; overflow-y: auto; flex: 1; background: #fff; }
+        #audio-btn {
+            background: none;
+            border: 1px solid var(--gold-accent);
+            color: var(--gold-accent);
+            cursor: pointer;
+            border-radius: 50%;
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+        }
+        #audio-btn:hover { background: rgba(212, 175, 55, 0.2); }
+        #audio-btn.speaking { background: var(--war-red); color: white; animation: pulse 1.5s infinite; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        .search-area { padding: 10px 15px; border-bottom: 1px solid #ddd; background: #eee; }
+        select#warSelect { 
+            width: 100%; padding: 10px; border-radius: 4px; border: 2px solid var(--steel-gray);
+            font-size: 14px; background: white;
+        }
+
+        #wiki-content { padding: 20px; overflow-y: auto; flex: 1; }
         #wiki-img { width: 100%; border-radius: 4px; display: none; margin-bottom: 15px; border: 2px solid var(--war-red); }
         #wiki-title { margin-top: 0; color: var(--war-red); font-size: 22px; border-bottom: 2px solid var(--gold-accent); padding-bottom: 10px; }
         
-        /* Dönüm Noktası Kutusu */
         .turning-point-box {
-            background: #fffdf2;
-            border-left: 5px solid var(--gold-accent);
-            padding: 12px;
-            margin-bottom: 15px;
-            font-style: italic;
-            font-size: 14px;
-            color: #555;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+            background: #fffdf2; border-left: 5px solid var(--gold-accent);
+            padding: 12px; margin-bottom: 15px; font-style: italic; font-size: 14px; color: #555;
         }
 
         #wiki-text { line-height: 1.7; color: #333; font-size: 15px; text-align: justify; }
-        
-        .source-link { 
-            display: inline-block; margin-top: 15px; padding: 8px 15px; 
-            background: var(--war-red); color: white; text-decoration: none; 
-            border-radius: 4px; font-weight: bold; font-size: 13px;
-        }
-
-        .translation-badge {
-            display: inline-block; background: #ffebee; color: #c62828;
-            padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-bottom: 10px;
-        }
+        .source-link { display: inline-block; margin-top: 15px; padding: 8px 15px; background: var(--war-red); color: white; text-decoration: none; border-radius: 4px; font-size: 13px; }
 
         @media (max-width: 900px) {
             body { flex-direction: column; }
-            #map { height: 40vh; width: 100%; }
+            #map { height: 40vh; }
             #info-panel { width: 100%; height: 60vh; }
         }
     </style>
@@ -84,27 +91,30 @@
 
     <div id="info-panel">
         <div class="header">
-            <h1>TARİHİN DÖNÜM NOKTALARI: SAVAŞLAR</h1>
+            <h1>TARİHİN DÖNÜM NOKTALARI</h1>
+            <div class="voice-controls">
+                <select id="voiceSelect" title="Ses Tonu Seçin"></select>
+                <button id="audio-btn" title="Sesli Oku">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                </button>
+            </div>
         </div>
         <div class="search-area">
-            <select id="warSelect">
-                <option value="">Bir Dönüm Noktası Seçin</option>
-            </select>
+            <select id="warSelect"><option value="">Bir Savaş Seçin</option></select>
         </div>
         <div id="wiki-content">
-            <h2 id="wiki-title">Kritik Savaşları Keşfedin</h2>
+            <h2 id="wiki-title">Keşfetmeye Başlayın</h2>
             <div id="tp-container"></div>
-            <div id="translation-status"></div>
-            <img id="wiki-img" src="" alt="Savaş Görseli">
-            <div id="wiki-text">Haritadan bir işaretçiye tıklayarak o savaşın neden bir "Dönüm Noktası" kabul edildiğini ve detaylarını görebilirsiniz.</div>
-            <a id="wiki-link" href="#" target="_blank" class="source-link" style="display:none;">Detaylı Bilgi (Wikipedia)</a>
+            <img id="wiki-img" src="">
+            <div id="wiki-text">Bir noktaya tıklayarak detayları dinleyebilirsiniz.</div>
+            <a id="wiki-link" href="#" target="_blank" class="source-link" style="display:none;">Wikipedia</a>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const wars = [
-         { 
+           { 
                 name: "Kadeş Savaşı (M.Ö. 1274)", 
                 lat: 34.55, lng: 36.51, wiki: "Kadeş_Savaşı",
                 turningPoint: "Tarihin bilinen ilk yazılı barış antlaşması imzalandı, diplomasi kavramı doğdu."
@@ -136,20 +146,7 @@
     lat: 32.82, lng: 73.74, wiki: "Hidaspes Muharebesi",
     turningPoint: "Büyük İskender'in en zorlu ve son büyük zaferi; antik Yunan kültürü ile Hint kültürü ilk kez bu ölçekte temas etti."
 },
-          { 
-  name: "Pyrrhus Savaşları (M.Ö. 280-275)", 
-  lat: 40.85, 
-  lng: 14.27, 
-  wiki: "Pirus zaferi",
-  turningPoint: "Roma'nın İtalya'daki hakimiyetinin başlangıcı; Yunan kolonileri ve Pyrrhus ile mücadele."
-},
-          { 
-  name: "Cannae Muharebesi (M.Ö. 216)", 
-  lat: 41.29, 
-  lng: 16.12, 
-  wiki: "Cannae Muharebesi",
-  turningPoint: "Hannibal, Roma ordusunu büyük bir bozguna uğrattı; Roma tarihinin en ağır yenilgilerinden biri."
-},
+          
     
             { 
                 name: "Zama Muharebesi (M.Ö. 202)", 
@@ -162,25 +159,10 @@
                 turningPoint: "Roma'nın Anadolu'ya ilk adımıdır; bu zaferle Roma bir İtalyan gücü olmaktan çıkıp bir dünya imparatorluğuna dönüşmüştür."
             },
           { 
-  name: "Alesia Kuşatması (M.Ö. 52)", 
-  lat: 47.58, 
-  lng: 4.78, 
-  wiki: "Alesia Muharebesi",
-  turningPoint: "Galyalı Vercingetorix'in Julius Caesar tarafından yenilgiye uğratılması; Roma'nın Galyalılar üzerindeki kontrolü kesinleşti."
-},
-          { 
-  name: "Actium Muharebesi (M.Ö. 31)", 
-  lat: 38.00, 
-  lng: 20.70, 
-  wiki: "Aktium Muharebesi",
-  turningPoint: "Octavianus'un zaferiyle Roma Cumhuriyeti sona erdi, Roma İmparatorluğu başladı."
-},
-          { 
     name: "Tevtonburg Ormanı Savaşı (M.S. 9)", 
     lat: 52.40, lng: 8.12, wiki: "Varus_Savaşı",
     turningPoint: "Germen kabileleri Roma ordusunu yok etti; Roma İmparatorluğu'nun sınırı Ren Nehri'nde kaldı ve Kuzey Avrupa hiçbir zaman Romalılaşmadı."
 },
-      
      
           { 
     name: "Fei Nehri Muharebesi (383)", 
@@ -747,82 +729,101 @@
 },
         ];
 
-        const map = L.map('map').setView([41.8719, 12.5674], 3);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+        const map = L.map('map').setView([20, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        const select = document.getElementById('warSelect');
-        const wikiTitle = document.getElementById('wiki-title');
-        const wikiText = document.getElementById('wiki-text');
-        const wikiImg = document.getElementById('wiki-img');
-        const wikiLink = document.getElementById('wiki-link');
-        const tpContainer = document.getElementById('tp-container');
-        const transStatus = document.getElementById('translation-status');
-        const markerList = [];
+        const voiceSelect = document.getElementById('voiceSelect');
+        const audioBtn = document.getElementById('audio-btn');
+        let voices = [];
 
-        const ironIcon = new L.Icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
-            iconSize: [25, 41], iconAnchor: [12, 41]
-        });
+        // Mevcut sesleri yükle
+        function loadVoices() {
+            voices = window.speechSynthesis.getVoices();
+            // Sadece Türkçe sesleri filtrele
+            const trVoices = voices.filter(v => v.lang.includes('tr'));
+            
+            voiceSelect.innerHTML = '';
+            trVoices.forEach((voice, i) => {
+                const option = document.createElement('option');
+                option.value = i;
+                // Daha anlaşılır isimler koy (Örn: Tolga, Yelda veya Sistem Sesi)
+                option.textContent = voice.name.replace('Microsoft', '').replace('Turkish', 'TR').trim();
+                voiceSelect.appendChild(option);
+            });
+        }
 
-        const activeIcon = new L.Icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-            iconSize: [25, 41], iconAnchor: [12, 41]
-        });
+        // Bazı tarayıcılarda seslerin yüklenmesi zaman alır
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices();
 
+        function speakContent() {
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+                audioBtn.classList.remove('speaking');
+                return;
+            }
+
+            const fullText = `${document.getElementById('wiki-title').innerText}. ${document.getElementById('tp-container').innerText}. ${document.getElementById('wiki-text').innerText}`;
+            const utterance = new SpeechSynthesisUtterance(fullText);
+            
+            // Seçilen sesi ata
+            const trVoices = voices.filter(v => v.lang.includes('tr'));
+            if (trVoices.length > 0) {
+                utterance.voice = trVoices[voiceSelect.value || 0];
+            }
+
+            utterance.pitch = 1; // Ses perdesi (0.1 - 2)
+            utterance.rate = 0.9;  // Okuma hızı (Daha anlaşılır olması için hafif yavaş)
+
+            utterance.onstart = () => audioBtn.classList.add('speaking');
+            utterance.onend = () => audioBtn.classList.remove('speaking');
+            window.speechSynthesis.speak(utterance);
+        }
+
+        audioBtn.addEventListener('click', speakContent);
+
+        // --- Harita ve Veri Fonksiyonları ---
         async function fetchWikiData(pageTitle, tpText) {
-            wikiText.innerHTML = "Stratejik analiz yükleniyor...";
-            wikiImg.style.display = "none";
-            wikiLink.style.display = "none";
-            transStatus.innerHTML = "";
-            tpContainer.innerHTML = `<div class="turning-point-box"><strong>Dönüm Noktası:</strong> ${tpText}</div>`;
+            window.speechSynthesis.cancel();
+            audioBtn.classList.remove('speaking');
+            document.getElementById('wiki-text').innerText = "Yükleniyor...";
+            document.getElementById('tp-container').innerHTML = `<div class="turning-point-box"><strong>Dönüm Noktası:</strong> ${tpText}</div>`;
             
             try {
-                let response = await fetch(`https://tr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`);
-                let data = await response.json();
-
-                if (data.status === 404) throw new Error();
-
-                wikiTitle.innerText = data.title;
-                wikiText.innerText = data.extract;
-                if (data.thumbnail) { wikiImg.src = data.thumbnail.source; wikiImg.style.display = "block"; }
-                wikiLink.href = data.content_urls.desktop.page;
-                wikiLink.style.display = "inline-block";
-            } catch (e) {
-                wikiText.innerText = "Detaylı bilgi için lütfen Wikipedia bağlantısını kullanın.";
-                wikiLink.href = `https://tr.wikipedia.org/wiki/${pageTitle}`;
-                wikiLink.style.display = "inline-block";
-            }
+                let resp = await fetch(`https://tr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`);
+                let data = await resp.json();
+                document.getElementById('wiki-title').innerText = data.title;
+                document.getElementById('wiki-text').innerText = data.extract;
+                if (data.thumbnail) { 
+                    const img = document.getElementById('wiki-img');
+                    img.src = data.thumbnail.source; 
+                    img.style.display = "block"; 
+                }
+            } catch (e) { document.getElementById('wiki-text').innerText = "Hata oluştu."; }
         }
 
+        const ironIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+        const activeIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+
+        const markerList = [];
         wars.forEach((w, i) => {
             const marker = L.marker([w.lat, w.lng], { icon: ironIcon }).addTo(map);
-            marker.bindTooltip(`<div style="font-family: Georgia; color: #8b0000; font-weight: bold; padding: 3px;">${w.name}</div>`, {
-                direction: 'top',
-                offset: L.point(0, -20)
+            marker.on('click', () => {
+                markerList.forEach(m => m.setIcon(ironIcon));
+                marker.setIcon(activeIcon);
+                map.flyTo([w.lat, w.lng], 6);
+                fetchWikiData(w.wiki, w.turningPoint);
             });
-            marker.on('click', () => updateWarView(w, i));
             markerList.push(marker);
-
+            
             const opt = document.createElement('option');
             opt.value = i; opt.textContent = w.name;
-            select.appendChild(opt);
+            document.getElementById('warSelect').appendChild(opt);
         });
 
-        function updateWarView(w, index) {
-            markerList.forEach(m => m.setIcon(ironIcon));
-            markerList[index].setIcon(activeIcon);
-            select.value = index;
-            map.flyTo([w.lat, w.lng], 7);
-            fetchWikiData(w.wiki, w.turningPoint);
-        }
-
-        select.addEventListener('change', (e) => {
-            if(e.target.value !== "") updateWarView(wars[e.target.value], e.target.value);
+        document.getElementById('warSelect').addEventListener('change', (e) => {
+            if(e.target.value !== "") markerList[e.target.value].fire('click');
         });
     </script>
 </body>
-</html>
-    
-  </body>
-  
 </html>
